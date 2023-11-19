@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-import { Button, CardBody } from "react-bootstrap";
-import { Form, Card } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
+import { Link } from "react-router-dom";
+
 export class TodoForm extends Component {
   constructor(props) {
     super(props);
@@ -8,22 +9,78 @@ export class TodoForm extends Component {
     this.state = {
       title: "",
       desc: "",
+      editMode: false,
+      editIndex: null,
+      list: JSON.parse(localStorage.getItem("todoList")) || [],
     };
+    console.log(this.state.list);
+  }
+  componentDidMount() {
+    const { editIndex } = this.props;
+
+    if (editIndex !== undefined && editIndex !== null) {
+      this.handleUpdate(editIndex);
+    }
+  
   }
 
-  handleChange = (e)=>{
-     const name = e.target.name
-     const value = e.target.value
-     this.setState((data)=>({...data,[name]:value}))
+  handleUpdate = (index) => {
+    const { list } = this.state;
+    if (index !== undefined && index !== null) {
+      const editData = list[index];
+      console.log(index);
+      console.log(editData, "f");
+      this.setState({
+        title: editData.title,
+        desc: editData.desc,
+        editIndex: index,
+        editMode: true,
+      });
+    }
+  };
+  handleChange = (e) => {
+    const { name, value } = e.target;
+    this.setState({ [name]: value });
+  };
 
-  }
+  handleSubmit = (e) => {
+    const { title, desc, editMode, editIndex, list } = this.state;
+
+    e.preventDefault();
+    const data = {
+      title: title,
+      desc: desc,
+    };
+
+    if (editMode) {
+      const updatedList = [...list];
+      updatedList[editIndex] = data;
+      this.setState({
+        list: updatedList,
+        title: "",
+        desc: "",
+        editMode: false,
+        editIndex: null,
+      });
+      localStorage.setItem("todoList", JSON.stringify([...updatedList]));
+    } else {
+      console.log("add");
+      this.setState({
+        list: [...list, data],
+        title: "",
+        desc: "",
+      });
+      localStorage.setItem("todoList", JSON.stringify([...list, data]));
+    }
+  };
 
   render() {
-    const { title, desc } = this.state;
+    const { title, desc, editMode } = this.state;
+
     return (
       <div>
         <Form
-          style={{ width: "500px", marginLeft: "400px", marginTop: "100px" }}
+          style={{ width: "500px", marginLeft: "400px", marginTop: "10px" }}
         >
           <Form.Group className="mb-2" controlId="exampleForm.ControlInput1">
             <Form.Label>Title</Form.Label>
@@ -47,8 +104,21 @@ export class TodoForm extends Component {
               onChange={this.handleChange}
               className="bg-secondary"
               style={{ color: "white" }}
+              required
             />
-            <Button variant="success" size="lg"style={{marginTop:"8px"}}> Add </Button>{' '}
+            <Button
+              variant="success"
+              size="lg"
+              style={{ marginTop: "8px" }}
+              onClick={this.handleSubmit}
+            >
+              {editMode ? "Update" : "Add"}
+            </Button>{" "}
+            <Link to="/show">
+              <Button variant="success" size="lg" style={{ marginTop: "8px" }}>
+                View
+              </Button>
+            </Link>
           </Form.Group>
         </Form>
       </div>
