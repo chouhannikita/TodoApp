@@ -1,129 +1,143 @@
-import React, { Component } from "react";
-import { Button, Form } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Form, Button, Card } from "react-bootstrap";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export class TodoForm extends Component {
-  constructor(props) {
-    super(props);
+function Todoform(props) {
+  const navigate = useNavigate();
+  const [name, setName] = useState({
+    title: "",
+    desc: "",
+    err: {},
+    isRedirect: false,
+    list: JSON.parse(localStorage.getItem("todobyhook")) || [],
+    editIndex: null,
+    editMode: false,
+  });
 
-    this.state = {
-      title: "",
-      desc: "",
-      editMode: false,
-      editIndex: null,
-      list: JSON.parse(localStorage.getItem("todoList")) || [],
-    };
-    console.log(this.state.list);
-  }
-  componentDidMount() {
-    const { editIndex } = this.props;
+  const handleChange = (e) => {
+    const names = e.target.name;
+    const value = e.target.value;
+    setName((prevState) => ({ ...prevState, [names]: value }));
+  };
 
-    if (editIndex !== undefined && editIndex !== null) {
-      this.handleUpdate(editIndex);
-    }
-  
-  }
-
-  handleUpdate = (index) => {
-    const { list } = this.state;
+  useEffect(() => {
+    const { index } = props;
     if (index !== undefined && index !== null) {
-      const editData = list[index];
-      console.log(index);
-      console.log(editData, "f");
-      this.setState({
-        title: editData.title,
-        desc: editData.desc,
-        editIndex: index,
-        editMode: true,
-      });
+      handleUpdate(index);
     }
+  }, [props.index]);
+
+  const handleUpdate = (index) => {
+    const { list } = name;
+    const editData = list[index];
+    setName({
+      ...name,
+      title: editData.title,
+      desc: editData.desc,
+      editMode: true,
+      editIndex: index,
+    });
   };
-  handleChange = (e) => {
-    const { name, value } = e.target;
-    this.setState({ [name]: value });
-  };
 
-  handleSubmit = (e) => {
-    const { title, desc, editMode, editIndex, list } = this.state;
+  const handleValid = () => {
+    const { err } = name;
 
-    e.preventDefault();
-    const data = {
-      title: title,
-      desc: desc,
-    };
-
-    if (editMode) {
-      const updatedList = [...list];
-      updatedList[editIndex] = data;
-      this.setState({
-        list: updatedList,
-        title: "",
-        desc: "",
-        editMode: false,
-        editIndex: null,
-      });
-      localStorage.setItem("todoList", JSON.stringify([...updatedList]));
+    if (name.title === "") {
+      err.title = "Required";
     } else {
-      console.log("add");
-      this.setState({
-        list: [...list, data],
-        title: "",
-        desc: "",
-      });
-      localStorage.setItem("todoList", JSON.stringify([...list, data]));
+      err.title = "";
+    }
+    if (name.desc === "") {
+      err.desc = "Required";
+    } else {
+      err.desc = "";
+    }
+    let valid = true;
+    Object.values(err).forEach((v) => {
+      v.length > 0 && (valid = false);
+    });
+    return valid;
+  };
+  handleValid();
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const { title, list, editMode, editIndex } = name;
+    if (handleValid()) {
+      const data = {
+        title: title,
+        desc: name.desc,
+      };
+      if (editMode) {
+        const updateList = [...list];
+        updateList[editIndex] = data;
+        setName({
+          editIndex: null,
+          title: "",
+          desc: "",
+          err: {},
+          isRedirect: true,
+          list: updateList,
+        });
+        localStorage.setItem("todobyhook", JSON.stringify(updateList));
+      } else {
+        setName({
+          title: "",
+          desc: "",
+          err: {},
+          isRedirect: true,
+          list: [...list, data],
+        });
+        localStorage.setItem("todobyhook", JSON.stringify([...list, data]));
+      }
     }
   };
 
-  render() {
-    const { title, desc, editMode } = this.state;
-
-    return (
-      <div>
-        <Form
-          style={{ width: "500px", marginLeft: "400px", marginTop: "10px" }}
-        >
-          <Form.Group className="mb-2" controlId="exampleForm.ControlInput1">
+  return (
+    <div>
+      <Card
+        style={{
+          width: "30rem",
+          marginLeft: "400px",
+          marginTop: "50px",
+          padding: "20px",
+        }}
+      >
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3" controlId="formBasictitle">
             <Form.Label>Title</Form.Label>
             <Form.Control
               type="text"
-              placeholder="title"
               name="title"
-              value={title}
-              onChange={this.handleChange}
-              className="bg-secondary"
-              style={{ color: "white" }}
+              value={name?.title}
+              onChange={handleChange}
             />
+            {name.err.title && (
+              <Form.Text style={{ color: "red" }}>{name.err.title}</Form.Text>
+            )}
           </Form.Group>
-          <Form.Group className="mb-3" controlId="">
-            <Form.Label>Description</Form.Label>
+
+          <Form.Group className="mb-3" controlId="formBasicDesc">
+            <Form.Label>Desc</Form.Label>
             <Form.Control
-              as="textarea"
-              rows={3}
+              type="textarea"
               name="desc"
-              value={desc}
-              onChange={this.handleChange}
-              className="bg-secondary"
-              style={{ color: "white" }}
-              required
+              value={name?.desc}
+              onChange={handleChange}
             />
-            <Button
-              variant="success"
-              size="lg"
-              style={{ marginTop: "8px" }}
-              onClick={this.handleSubmit}
-            >
-              {editMode ? "Update" : "Add"}
-            </Button>{" "}
-            <Link to="/show">
-              <Button variant="success" size="lg" style={{ marginTop: "8px" }}>
-                View
-              </Button>
-            </Link>
+            {name.err.desc && (
+              <Form.Text style={{ color: "red" }}>{name.err.desc}</Form.Text>
+            )}
           </Form.Group>
+
+          <Button variant="primary" type="submit">
+            Submit
+          </Button>
         </Form>
-      </div>
-    );
-  }
+      </Card>
+      {name.isRedirect && navigate("/show")}
+    </div>
+  );
 }
 
-export default TodoForm;
+export default Todoform;
