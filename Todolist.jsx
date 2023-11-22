@@ -1,96 +1,55 @@
-import React, { Component } from "react";
-import { Button, Table } from "react-bootstrap";
-import { Link } from "react-router-dom";
-class Todolist extends Component {
-  constructor(props) {
-    super(props);
+import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Table,Button } from 'react-bootstrap'
+function Todolist(props) {
+  const [data,setData] = useState(JSON.parse(localStorage.getItem("todobyhook")) || [])
 
-    this.state = {
-      list: JSON.parse(localStorage.getItem("todoList")) || [],
-      tododone : false,
-      completedItems:[],
-    };
+  const handleDelete = (index)=>{
+    const deList = [...data]
+    deList.splice(index,1)
+   setData(deList)
+    localStorage.setItem("todobyhook",JSON.stringify(deList))
   }
 
-  handleCheck = (index) => {
-    const {completedItems} = this.state
-    completedItems[index] = !completedItems[index] 
-    this.setState({completedItems});
-  };
-  handleDelete = (index) => {
-    console.log(index,"d")
-      const { list } = this.state;
-      console.log("list",list)
-      const newlist = [...list];
-      newlist.splice(index, 1);
-      this.setState({
-        list: [...newlist],
-      });
-      console.log(newlist,"new")
-      localStorage.setItem("todoList", JSON.stringify(newlist));
-    };
-  
+ if(data.length>0){
 
-  render() {
-    const { list,completedItems } = this.state;
-
+   
     return (
+  
       <div>
         <Table striped bordered hover>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Description</th>
-              <th>Update</th>
-              <th>Delete</th>
-              <th>Done</th>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Desc</th>
+            <th>Delete</th>
+            <th>Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data && data.map((v,index)=>{
+            return (
+              <tr key={index}>
+              <td>{v?.title}</td>
+              <td>{v.desc}</td>
+              <td><Button variant="danger" onClick={()=>{handleDelete(index)}} >Delete</Button></td>
+              <td>
+              <Link to="/">
+              <Button variant="primary" onClick={()=>{props.handleUpdate(index)}} >Update</Button>
+              </Link>
+              </td>
+            
             </tr>
-          </thead>
-          <tbody>
-            {list &&
-              list.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.title}</td>
-                  <td>{item.desc}</td>
-                  <td>
-                    <Link to="/">
-                      <Button
-                        variant="success"
-                        size="sm"
-                        style={{ marginRight: "8px" }}
-                        onClick={() => this.props.handleUpdate(index)}
-                      >
-                        Update
-                      </Button>
-                    </Link>
-                  </td>
-                  <td>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      style={{ marginRight: "8px" }}
-                      onClick={() => this.handleDelete(index)}
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                  <td>
-                  
-                <input
-                  type="checkbox"
-                  style={{ marginLeft: "10px" }}
-                  checked={completedItems[index] || false}
-                  onChange={() => this.handleCheck(index)}
-               />
-                 <span style={{ color: "green" }}> {completedItems[index] ? "complete" : ""}</span>
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </Table>
+            )
+          })}
+        </tbody>
+      </Table> 
       </div>
-    );
-  }
+    )
+ }
+ else{
+  return <h1>hello</h1>
+ }
 }
 
-export default Todolist;
+export default Todolist
